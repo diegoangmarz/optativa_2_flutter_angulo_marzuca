@@ -1,0 +1,35 @@
+name: optativa_2_flutter_angulo_marzuca
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  provider: ^6.0.5
+  http: ^1.2.2
+  shared_preferences: ^2.1.0
+  flutter_localizations:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/product1.jpeg
+    - assets/images/product2.jpeg
+    - assets/images/product3.jpeg
+    - assets/images/product4.jpeg
+    - assets/images/product5.jpeg
+    - assets/images/product6.jpeg
+    - assets/images/login_image.jpeg
+    - assets/images/product_image.jpeg
