@@ -2,6 +2,7 @@ import '../connection/api_service.dart';
 
 abstract class IRepository<T> {
   Future<List<T>> getAll();
+  
   Future<T> getById(int id);
   Future<void> create(T entity);
   Future<void> update(T entity);

@@ -1,96 +1,141 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../routes.dart';
 
-class ProductsScreen extends StatelessWidget {
+class ProductsScreen extends StatefulWidget {
+  const ProductsScreen({super.key});
+
+  @override
+  _ProductsScreenState createState() => _ProductsScreenState();
+}
+
+class _ProductsScreenState extends State<ProductsScreen> {
+  List<Map<String, dynamic>> products = [];
+  bool isLoading = true;
+  String category = '';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final categoryArg = ModalRoute.of(context)?.settings.arguments as String?;
+    if (categoryArg != null && categoryArg != category) {
+      setState(() {
+        category = categoryArg;
+        fetchProducts(category);
+      });
+    }
+  }
+
+  Future<void> fetchProducts(String category) async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      final response = await http.get(Uri.parse('https://dummyjson.com/products/category/$category'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('API Response: $data'); // Imprimir la respuesta de la API para depuración
+        setState(() {
+          products = List<Map<String, dynamic>>.from(data['products'] ?? []);
+          isLoading = false;
+        });
+      } else {
+        print('Failed to load products');
+        throw Exception('Failed to load products');
+      }
+    } catch (error) {
+      setState(() {
+        isLoading = false;
+      });
+      print('Error fetching products: $error');
+      throw Exception('Error fetching products: $error');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final category = ModalRoute.of(context)?.settings.arguments as String? ?? 'Categoría desconocida';
-
-    final products = [
-      {'name': 'Product 1', 'image': 'assets/images/product1.jpeg'},
-      {'name': 'Product 2', 'image': 'assets/images/product2.jpeg'},
-      {'name': 'Product 3', 'image': 'assets/images/product3.jpeg'},
-      {'name': 'Product 4', 'image': 'assets/images/product4.jpeg'},
-      {'name': 'Product 5', 'image': 'assets/images/product5.jpeg'},
-      {'name': 'Product 6', 'image': 'assets/images/product6.jpeg'},
-    ];
+    final displayCategory = category.split('/').last; // Mostrar solo el nombre de la categoría
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Productos de $category'),
+        title: Text(displayCategory),
         backgroundColor: Colors.blue,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, // Número de columnas
-            crossAxisSpacing: 16.0,
-            mainAxisSpacing: 16.0,
-          ),
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            final product = products[index];
-            return GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  Routes.productDetail,
-                  arguments: product['name'] ?? 'Producto desconocido',
-                );
-              },
-              child: Card(
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                        child: Image.asset(
-                          product['image']!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        ),
-                      ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : products.isEmpty
+              ? Center(child: Text("No hay productos en esta categoría."))
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16.0,
+                      mainAxisSpacing: 16.0,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        product['name'] ?? 'Producto desconocido',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: TextButton(
-                        onPressed: () {
+                    itemCount: products.length,
+                    itemBuilder: (context, index) {
+                      final product = products[index];
+                      return GestureDetector(
+                        onTap: () {
                           Navigator.pushNamed(
                             context,
                             Routes.productDetail,
-                            arguments: product['name'] ?? 'Producto desconocido',
+                            arguments: product['id'].toString(),
                           );
                         },
-                        child: Text(
-                          'Detalles',
-                          style: TextStyle(color: Colors.blue),
+                        child: Card(
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                                  child: Image.network(
+                                    product['thumbnail'] ?? '',
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Center(child: Icon(Icons.image, color: Colors.grey, size: 50));
+                                    },
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  product['title'] ?? 'Producto desconocido',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      Routes.productDetail,
+                                      arguments: product['id'].toString(),
+                                    );
+                                  },
+                                  child: Text(
+                                    'Detalles',
+                                    style: TextStyle(color: Colors.blue),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
+                      );
+                    },
+                  ),
                 ),
-              ),
-            );
-          },
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text('Selected: $category', textAlign: TextAlign.center),
-      ),
     );
   }
 }

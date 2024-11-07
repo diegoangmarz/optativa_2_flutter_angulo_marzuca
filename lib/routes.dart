@@ -1,6 +1,6 @@
 class Routes {
-  static const login = '/login';
-  static const categories = '/categories';
-  static const products = '/products';
-  static const productDetail = '/product-detail';
+  static const String login = '/login';
+  static const String categories = '/categories';
+  static const String products = '/products';
+  static const String productDetail = '/product-detail';
 }

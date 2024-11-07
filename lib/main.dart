@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:optativa_2_flutter_angulo_marzuca/screens/product_detail_screen.dart';
-import 'package:optativa_2_flutter_angulo_marzuca/screens/products_screen.dart';
+import 'screens/product_detail_screen.dart';
+import 'screens/products_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/categories_screen.dart';
 import 'routes.dart';
@@ -8,6 +8,8 @@ import 'routes.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -17,10 +19,11 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: Routes.login,
       routes: {
-        Routes.login: (context) => LoginScreen(),
-        Routes.categories: (context) => CategoriesScreen(),
-        Routes.productDetail: (context ) => ProductDetailScreen() ,
-        Routes.products: (context) => ProductsScreen()     },
+        Routes.login: (context) =>  LoginScreen(),
+        Routes.categories: (context) => const CategoriesScreen(),
+        Routes.products: (context) => const ProductsScreen(),
+        Routes.productDetail: (context) => const ProductDetailScreen(),
+      },
     );
   }
 }
