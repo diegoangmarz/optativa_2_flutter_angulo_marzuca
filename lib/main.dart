@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'routes.dart';
+import 'package:optativa_2_flutter_angulo_marzuca/screens/product_detail_screen.dart';
+import 'package:optativa_2_flutter_angulo_marzuca/screens/products_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/categories_screen.dart';
-import 'screens/products_screen.dart';
-import 'screens/product_detail_screen.dart';
+import 'routes.dart';
 
 void main() => runApp(MyApp());
 
@@ -19,9 +19,8 @@ class MyApp extends StatelessWidget {
       routes: {
         Routes.login: (context) => LoginScreen(),
         Routes.categories: (context) => CategoriesScreen(),
-        Routes.products: (context) => ProductsScreen(),
-        Routes.productDetail: (context) => ProductDetailScreen(),
-      },
+        Routes.productDetail: (context ) => ProductDetailScreen() ,
+        Routes.products: (context) => ProductsScreen()     },
     );
   }
 }

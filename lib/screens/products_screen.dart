@@ -4,15 +4,15 @@ import '../routes.dart';
 class ProductsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final category = ModalRoute.of(context)?.settings.arguments as String;
+    final category = ModalRoute.of(context)?.settings.arguments as String? ?? 'Categoría desconocida';
 
     final products = [
-      {'name': 'Product 1 1', 'image': 'assets/images/product1.png'},
-      {'name': 'Product 2 2', 'image': 'assets/images/product2.png'},
-      {'name': 'Product 3 3', 'image': 'assets/images/product3.png'},
-      {'name': 'Product 4 4', 'image': 'assets/images/product4.png'},
-      {'name': 'Product 5 5', 'image': 'assets/images/product5.png'},
-      {'name': 'Product 6 6', 'image': 'assets/images/product6.png'},
+      {'name': 'Product 1', 'image': 'assets/images/product1.jpeg'},
+      {'name': 'Product 2', 'image': 'assets/images/product2.jpeg'},
+      {'name': 'Product 3', 'image': 'assets/images/product3.jpeg'},
+      {'name': 'Product 4', 'image': 'assets/images/product4.jpeg'},
+      {'name': 'Product 5', 'image': 'assets/images/product5.jpeg'},
+      {'name': 'Product 6', 'image': 'assets/images/product6.jpeg'},
     ];
 
     return Scaffold(
@@ -33,7 +33,11 @@ class ProductsScreen extends StatelessWidget {
             final product = products[index];
             return GestureDetector(
               onTap: () {
-                Navigator.pushNamed(context, Routes.productDetail, arguments: product['name']);
+                Navigator.pushNamed(
+                  context,
+                  Routes.productDetail,
+                  arguments: product['name'] ?? 'Producto desconocido',
+                );
               },
               child: Card(
                 elevation: 5,
@@ -47,7 +51,7 @@ class ProductsScreen extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
                         child: Image.asset(
-                          product['image'],
+                          product['image']!,
                           fit: BoxFit.cover,
                           width: double.infinity,
                         ),
@@ -56,7 +60,7 @@ class ProductsScreen extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
-                        product['name'],
+                        product['name'] ?? 'Producto desconocido',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -64,7 +68,11 @@ class ProductsScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: TextButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, Routes.productDetail, arguments: product['name']);
+                          Navigator.pushNamed(
+                            context,
+                            Routes.productDetail,
+                            arguments: product['name'] ?? 'Producto desconocido',
+                          );
                         },
                         child: Text(
                           'Detalles',

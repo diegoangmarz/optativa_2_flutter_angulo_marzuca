@@ -1,33 +1,32 @@
 import '../connection/api_service.dart';
-class Repository {
-  final ApiService apiService;
 
-  Repository({required this.apiService});
+abstract class IRepository<T> {
+  Future<List<T>> getAll();
+  Future<T> getById(int id);
+  Future<void> create(T entity);
+  Future<void> update(T entity);
+  Future<void> delete(int id);
+}
 
-  Future<List<String>> getCategories() async {
-    try {
-      final data = await apiService.fetchData('products/categories');
-      return List<String>.from(data['categories']);
-    } catch (e) {
-      throw Exception('Error fetching categories: $e');
-    }
+class ProductRepository implements IRepository<String> {
+  final ApiService _apiService = ApiService();
+
+  @override
+  Future<List<String>> getAll() async {
+    return await _apiService.getCategories();
   }
 
-  Future<List<String>> getProductsByCategory(String category) async {
-    try {
-      final data = await apiService.fetchData('products/category/$category');
-      return List<String>.from(data['products'].map((item) => item['name'] as String));
-    } catch (e) {
-      throw Exception('Error fetching products for category $category: $e');
-    }
+  @override
+  Future<String> getById(int id) async {
+    return "Product $id";
   }
 
-  Future<Map<String, dynamic>> getProductById(String productId) async {
-    try {
-      final data = await apiService.fetchData('products/$productId');
-      return data;
-    } catch (e) {
-      throw Exception('Error fetching product details: $e');
-    }
-  }
+  @override
+  Future<void> create(String entity) async {}
+
+  @override
+  Future<void> update(String entity) async {}
+
+  @override
+  Future<void> delete(int id) async {}
 }

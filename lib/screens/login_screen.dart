@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../routes.dart';
+import 'categories_screen.dart'; 
+import '../infraestructure/connection/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -7,31 +8,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final String correctUsername = 'ADMIN';
-  final String correctPassword = '1234567890';
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
-  void _login() {
-    if (_usernameController.text == correctUsername && _passwordController.text == correctPassword) {
-      Navigator.pushReplacementNamed(context, Routes.categories);
-    } else {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('Error'),
-            content: Text('Credenciales incorrectas'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Ok'),
-              ),
-            ],
-          );
-        },
-      );
-    }
+  final ApiService _apiService = ApiService();
+
+  void _login() async {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => CategoriesScreen()),
+    );
   }
 
   @override
@@ -42,37 +28,37 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.blue,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Imagen de login
-            Image.asset('assets/images/login_image.png', height: 150),
+            Image.asset(
+              'assets/images/login_image.jpeg',
+              height: 200,
+            ),
             SizedBox(height: 20),
             TextField(
               controller: _usernameController,
               decoration: InputDecoration(
                 labelText: 'Usuario',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person),
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 10),
             TextField(
               controller: _passwordController,
+              obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Contraseña',
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
               ),
-              obscureText: true,
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _login,
               child: Text('Ingresar'),
               style: ElevatedButton.styleFrom(
-                primary: Colors.blue,
+                backgroundColor: Colors.blue,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               ),
             ),

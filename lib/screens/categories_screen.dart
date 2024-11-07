@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../routes.dart';
 
 class CategoriesScreen extends StatelessWidget {
+  const CategoriesScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     final categories = [
@@ -25,6 +27,7 @@ class CategoriesScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.settings),
             onPressed: () {
+              // Acción para el icono de configuración
             },
           ),
         ],
@@ -34,14 +37,21 @@ class CategoriesScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           final category = categories[index];
           return ListTile(
-            leading: Icon(category['icon']),
-            title: Text(category['name']),
-            subtitle: Text(category['date']),
+            leading: Icon(category['icon'] as IconData?), 
+            title: Text(category['name'] as String), 
+            subtitle: Text(category['date'] as String), 
             onTap: () {
-              Navigator.pushNamed(context, Routes.products, arguments: category['name']);
+              Navigator.pushReplacementNamed(context, Routes.products, arguments: category['name']);
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushReplacementNamed(context, Routes.products, arguments: 'Categoría seleccionada');
+        },
+        backgroundColor: Colors.blue,
+        child: Icon(Icons.navigate_next),
       ),
     );
   }
