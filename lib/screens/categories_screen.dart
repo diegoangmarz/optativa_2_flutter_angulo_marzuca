@@ -11,7 +11,7 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class CategoriesScreenState extends State<CategoriesScreen> {
-  List<String> categories = [];
+  List<Map<String, dynamic>> categories = [];
   bool isLoading = true;
   String errorMessage = '';
 
@@ -26,10 +26,10 @@ class CategoriesScreenState extends State<CategoriesScreen> {
       final response = await http.get(Uri.parse('https://dummyjson.com/products/categories'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-
+        print('API Response: $data');  
         if (data is List) {
           setState(() {
-            categories = data.map((category) => category.toString()).toList();
+            categories = List<Map<String, dynamic>>.from(data);
             isLoading = false;
           });
         } else {
@@ -63,9 +63,13 @@ class CategoriesScreenState extends State<CategoriesScreen> {
                     final category = categories[index];
                     return ListTile(
                       leading: Icon(Icons.category),
-                      title: Text(category.split('/').last), // Mostrar solo el nombre de la categoría
+                      title: Text(category['name']),  
                       onTap: () {
-                        Navigator.pushReplacementNamed(context, Routes.products, arguments: category);
+                        Navigator.pushNamed(
+                          context,
+                          Routes.products,
+                          arguments: category['slug'],  
+                        );
                       },
                     );
                   },

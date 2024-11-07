@@ -16,26 +16,35 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   void initState() {
     super.initState();
-    fetchProductDetails();
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      fetchProductDetails();
+    });
   }
 
   Future<void> fetchProductDetails() async {
     final productId = ModalRoute.of(context)?.settings.arguments as String?;
     if (productId != null) {
-      final response = await http.get(Uri.parse('https://dummyjson.com/products/$productId'));
-      if (response.statusCode == 200) {
+      try {
+        final response = await http.get(Uri.parse('https://dummyjson.com/products/$productId'));
+        if (response.statusCode == 200) {
+          setState(() {
+            product = json.decode(response.body);
+            isLoading = false;
+          });
+        } else {
+          throw Exception('Failed to load product details. Status code: ${response.statusCode}');
+        }
+      } catch (error) {
         setState(() {
-          product = json.decode(response.body);
           isLoading = false;
+          print('Error fetching product details: $error');
         });
-      } else {
-        throw Exception('Failed to load product details');
       }
     } else {
       setState(() {
         isLoading = false;
+        print('Product ID is null');
       });
-      throw Exception('Product ID is null');
     }
   }
 
@@ -52,49 +61,53 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ? Center(child: Text('No se encontró información del producto.'))
               : Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Image.network(
-                          product?['thumbnail'] ?? 'https://via.placeholder.com/150',
-                          height: 200,
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Text(
-                        product?['title'] ?? 'Nombre del Producto',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        product?['description'] ?? 'Descripción del Producto',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      SizedBox(height: 20),
-                      Text(
-                        'Precio: \$${product?['price']}',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        'Stock: ${product?['stock']}',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Image.network(
+                            product?['thumbnail'] ?? 'https://via.placeholder.com/150',
+                            height: 200,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(Icons.image, size: 100, color: Colors.grey);
+                            },
                           ),
-                          onPressed: () {
-                            // Lógica para agregar el producto al carrito
-                          },
-                          child: Text('+ Agregar'),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 20),
+                        Text(
+                          product?['title'] ?? 'Nombre del Producto',
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          product?['description'] ?? 'Descripción del Producto',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        SizedBox(height: 20),
+                        Text(
+                          'Precio: \$${product?['price']}',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Stock: ${product?['stock']}',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        SizedBox(height: 20),
+                        Center(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                            ),
+                            onPressed: () {
+                            },
+                            child: Text('+ Agregar'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
     );

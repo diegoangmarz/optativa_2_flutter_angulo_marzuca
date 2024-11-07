@@ -20,10 +20,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
     super.didChangeDependencies();
     final categoryArg = ModalRoute.of(context)?.settings.arguments as String?;
     if (categoryArg != null && categoryArg != category) {
-      setState(() {
-        category = categoryArg;
-        fetchProducts(category);
-      });
+      category = categoryArg;
+      fetchProducts(category);
     }
   }
 
@@ -33,29 +31,33 @@ class _ProductsScreenState extends State<ProductsScreen> {
     });
     try {
       final response = await http.get(Uri.parse('https://dummyjson.com/products/category/$category'));
+      print('Fetching products from URL: https://dummyjson.com/products/category/$category');  
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('API Response: $data'); // Imprimir la respuesta de la API para depuración
-        setState(() {
-          products = List<Map<String, dynamic>>.from(data['products'] ?? []);
-          isLoading = false;
-        });
+        print('API Response: $data'); 
+        if (data['products'] is List) {
+          setState(() {
+            products = List<Map<String, dynamic>>.from(data['products']);
+            isLoading = false;
+          });
+        } else {
+          throw Exception('Unexpected data format');
+        }
       } else {
-        print('Failed to load products');
+        print('Failed to load products. Status code: ${response.statusCode}');
         throw Exception('Failed to load products');
       }
     } catch (error) {
       setState(() {
         isLoading = false;
+        print('Error fetching products: $error');
       });
-      print('Error fetching products: $error');
-      throw Exception('Error fetching products: $error');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final displayCategory = category.split('/').last; // Mostrar solo el nombre de la categoría
+    final displayCategory = category; 
 
     return Scaffold(
       appBar: AppBar(
@@ -64,78 +66,68 @@ class _ProductsScreenState extends State<ProductsScreen> {
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : products.isEmpty
-              ? Center(child: Text("No hay productos en esta categoría."))
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16.0,
-                      mainAxisSpacing: 16.0,
+          : ListView.builder(
+              padding: const EdgeInsets.all(16.0),
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                final product = products[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      Routes.productDetail,
+                      arguments: product['id'].toString(),
+                    );
+                  },
+                  child: Card(
+                    elevation: 5,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            Routes.productDetail,
-                            arguments: product['id'].toString(),
-                          );
-                        },
-                        child: Card(
-                          elevation: 5,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                                  child: Image.network(
-                                    product['thumbnail'] ?? '',
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Center(child: Icon(Icons.image, color: Colors.grey, size: 50));
-                                    },
-                                  ),
-                                ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                product['thumbnail'] ?? '',
+                                fit: BoxFit.cover,
+                                height: 100,
+                                width: 100,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(child: Icon(Icons.image, color: Colors.grey, size: 50));
+                                },
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
+                            ),
+                          ),
+                          SizedBox(width: 16.0),
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
                                   product['title'] ?? 'Producto desconocido',
                                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                                child: TextButton(
-                                  onPressed: () {
-                                    Navigator.pushNamed(
-                                      context,
-                                      Routes.productDetail,
-                                      arguments: product['id'].toString(),
-                                    );
-                                  },
-                                  child: Text(
-                                    'Detalles',
-                                    style: TextStyle(color: Colors.blue),
-                                  ),
+                                SizedBox(height: 8.0),
+                                Text(
+                                  '\$${product['price']}',
+                                  style: TextStyle(fontSize: 16, color: Colors.green),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                );
+              },
+            ),
     );
   }
 }
