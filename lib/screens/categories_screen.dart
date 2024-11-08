@@ -26,10 +26,13 @@ class CategoriesScreenState extends State<CategoriesScreen> {
       final response = await http.get(Uri.parse('https://dummyjson.com/products/categories'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('API Response: $data');  
+        print('API Response: $data');  // Verificar la respuesta de la API
         if (data is List) {
           setState(() {
-            categories = List<Map<String, dynamic>>.from(data);
+            categories = List<Map<String, dynamic>>.from(data.map((item) => {
+              'name': item['name'],
+              'slug': item['slug']
+            }));
             isLoading = false;
           });
         } else {
@@ -50,11 +53,29 @@ class CategoriesScreenState extends State<CategoriesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Categorías'),
+        title: const Text('Categorías'),
         backgroundColor: Colors.blue,
+        leading: PopupMenuButton<String>(
+          icon: const Icon(Icons.menu),
+          onSelected: (value) {
+            if (value == 'Categorías') {
+              Navigator.pushNamed(context, Routes.categories);
+            } else if (value == 'Carritos') {
+              Navigator.pushNamed(context, Routes.carts);
+            }
+          },
+          itemBuilder: (BuildContext context) {
+            return {'Categorías', 'Carritos'}.map((String choice) {
+              return PopupMenuItem<String>(
+                value: choice,
+                child: Text(choice),
+              );
+            }).toList();
+          },
+        ),
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
               ? Center(child: Text(errorMessage))
               : ListView.builder(
@@ -62,13 +83,13 @@ class CategoriesScreenState extends State<CategoriesScreen> {
                   itemBuilder: (context, index) {
                     final category = categories[index];
                     return ListTile(
-                      leading: Icon(Icons.category),
-                      title: Text(category['name']),  
+                      leading: const Icon(Icons.category),
+                      title: Text(category['name']),  // Mostrar el nombre de la categoría
                       onTap: () {
                         Navigator.pushNamed(
                           context,
                           Routes.products,
-                          arguments: category['slug'],  
+                          arguments: category['slug'],  // Pasar el slug de la categoría como argumento
                         );
                       },
                     );

@@ -31,10 +31,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
     });
     try {
       final response = await http.get(Uri.parse('https://dummyjson.com/products/category/$category'));
-      print('Fetching products from URL: https://dummyjson.com/products/category/$category');  
+      print('Fetching products from URL: https://dummyjson.com/products/category/$category');  // Debug URL
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('API Response: $data'); 
+        print('API Response: $data'); // Debug API Response
         if (data['products'] is List) {
           setState(() {
             products = List<Map<String, dynamic>>.from(data['products']);
@@ -44,7 +44,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
           throw Exception('Unexpected data format');
         }
       } else {
-        print('Failed to load products. Status code: ${response.statusCode}');
+        print('Failed to load products. Status code: ${response.statusCode}'); // Debug Status Code
         throw Exception('Failed to load products');
       }
     } catch (error) {
@@ -57,7 +57,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final displayCategory = category; 
+    final displayCategory = category; // Mostrar el nombre de la categoría seleccionada
 
     return Scaffold(
       appBar: AppBar(

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'screens/carts_screen.dart';
 import 'screens/product_detail_screen.dart';
 import 'screens/products_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/categories_screen.dart';
+import 'screens/cart_details_screen.dart';
 import 'routes.dart';
 
-void main() => runApp(MyApp());
+
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -19,10 +22,12 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: Routes.login,
       routes: {
-        Routes.login: (context) =>  LoginScreen(),
+        Routes.login: (context) => const LoginScreen(),
         Routes.categories: (context) => const CategoriesScreen(),
         Routes.products: (context) => const ProductsScreen(),
         Routes.productDetail: (context) => const ProductDetailScreen(),
+        Routes.carts: (context) => const CartsScreen(),
+        Routes.cartDetails: (context) => const CartDetailsScreen(),
       },
     );
   }
