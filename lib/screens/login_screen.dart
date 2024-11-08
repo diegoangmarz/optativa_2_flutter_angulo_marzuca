@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'categories_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -18,20 +19,20 @@ class _LoginScreenState extends State<LoginScreen> {
     final username = _usernameController.text;
     final password = _passwordController.text;
 
-    final url = Uri.parse('https://dummyjson.com/auth/login');
     final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
+      Uri.parse('https://dummyjson.com/auth/login'),
+      headers: { 'Content-Type': 'application/json' },
       body: json.encode({
         'username': username,
         'password': password,
-        'expiresInMins': 30, 
       }),
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      debugPrint('Login successful: $data');
+      final token = data['accessToken'];
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
 
       if (!mounted) return;
       Navigator.pushReplacement(
@@ -39,9 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (context) => const CategoriesScreen()),
       );
     } else {
-      // Manejo de errores
-      debugPrint('Login failed with status code: ${response.statusCode}');
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Inicio de sesión fallido')),
       );

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/cart_model.dart';
 import '../widgets/add_to_cart_dialog.dart';
-import '../routes.dart'; // Asegúrate de importar las rutas
+import '../routes.dart'; 
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key});
@@ -15,6 +16,7 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Map<String, dynamic>? product;
   bool isLoading = true;
+  final TextEditingController _quantityController = TextEditingController();
 
   @override
   void initState() {
@@ -45,47 +47,53 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void _addToCart() async {
-    final response = await http.get(Uri.parse('https://dummyjson.com/carts'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final List<Cart> carts = List<Cart>.from(data['carts'].map((item) => Cart.fromJson(item)));
-
-      final selectedCartId = await showDialog<int>(
-        context: context,
-        builder: (context) => AddToCartDialog(carts: carts),
+    final quantity = int.tryParse(_quantityController.text) ?? 0;
+    if (quantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, ingrese una cantidad válida')),
       );
-
-      if (selectedCartId != null) {
-        final productId = product?['id'];
-        if (productId != null) {
-          final response = await http.put(
-            Uri.parse('https://dummyjson.com/carts/$selectedCartId'),
-            headers: { 'Content-Type': 'application/json' },
-            body: json.encode({
-              'merge': true,
-              'products': [
-                {
-                  'id': productId,
-                  'quantity': 1,
-                },
-              ],
-            }),
-          );
-
-          if (response.statusCode == 200) {
-            final updatedCart = json.decode(response.body);
-            debugPrint('Product added to cart: $updatedCart');
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Producto añadido al carrito.')),
-              );
-            }
-          } else {
-            debugPrint('Failed to add product to cart. Status code: ${response.statusCode}');
-          }
-        }
-      }
+      return;
     }
+
+    if (quantity > (product?['stock'] ?? 0)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('La cantidad no puede superar el stock disponible')),
+      );
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final carts = prefs.getStringList('carts') ?? [];
+    final productId = product?['id'].toString() ?? '';
+
+    final existingCartIndex = carts.indexWhere((element) => json.decode(element)['id'] == productId);
+    if (existingCartIndex != -1) {
+      final existingCart = json.decode(carts[existingCartIndex]);
+      existingCart['quantity'] += quantity;
+      carts[existingCartIndex] = json.encode(existingCart);
+    } else {
+      if (carts.length >= 7) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No puede agregar más de 7 productos diferentes al carrito')),
+        );
+        return;
+      }
+
+      carts.add(json.encode({
+        'id': productId,
+        'name': product?['title'],
+        'price': product?['price'],
+        'quantity': quantity,
+        'total': (product?['price'] ?? 0) * quantity,
+        'date': DateTime.now().toString(),
+      }));
+    }
+
+    await prefs.setStringList('carts', carts);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Producto añadido al carrito.')),
+    );
   }
 
   @override
@@ -150,6 +158,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Text(
                         'Stock: ${product?['stock']}',
                         style: const TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: _quantityController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Cantidad',
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                       const SizedBox(height: 20),
                       Center(
