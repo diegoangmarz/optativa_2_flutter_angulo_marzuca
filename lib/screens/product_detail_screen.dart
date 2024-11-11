@@ -94,7 +94,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         'quantity': quantity,
         'total': (product?['price'] ?? 0) * quantity,
         'date': DateTime.now().toString(),
-        'thumbnail': product?['thumbnail'], // Guardar la imagen del producto
+        'thumbnail': product?['thumbnail'], 
       }));
     }
 
@@ -106,7 +106,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     setState(() {
       isAdding = false;
-      quantity = 1;  // Reset quantity after adding to cart
+      quantity = 1; 
     });
   }
 

@@ -26,7 +26,7 @@ class CategoriesScreenState extends State<CategoriesScreen> {
       final response = await http.get(Uri.parse('https://dummyjson.com/products/categories'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('API Response: $data');  // Verificar la respuesta de la API
+        print('API Response: $data');  
         if (data is List) {
           setState(() {
             categories = List<Map<String, dynamic>>.from(data.map((item) => {
@@ -84,12 +84,12 @@ class CategoriesScreenState extends State<CategoriesScreen> {
                     final category = categories[index];
                     return ListTile(
                       leading: const Icon(Icons.category),
-                      title: Text(category['name']),  // Mostrar el nombre de la categoría
+                      title: Text(category['name']),  
                       onTap: () {
                         Navigator.pushNamed(
                           context,
                           Routes.products,
-                          arguments: category['slug'],  // Pasar el slug de la categoría como argumento
+                          arguments: category['slug'],  
                         );
                       },
                     );

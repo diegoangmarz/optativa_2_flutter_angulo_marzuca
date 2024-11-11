@@ -137,7 +137,7 @@ class CartsScreenState extends State<CartsScreen> {
                                     children: [
                                       Text(item['name'] ?? 'Producto desconocido', style: const TextStyle(fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 8),
-                                      Text('Precio por unidad: \$${item['price'].toStringAsFixed(2)}'), // Añadir precio por unidad
+                                      Text('Precio por unidad: \$${item['price'].toStringAsFixed(2)}'), 
                                       Text('Total: \$${item['total'].toStringAsFixed(2)}'),
                                     ],
                                   ),
