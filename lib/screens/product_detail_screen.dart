@@ -16,12 +16,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool isLoading = true;
   bool isAdding = false;
   int quantity = 1;
+  int cartItemCount = 0;
+  int totalQuantityInCart = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       fetchProductDetails();
+      fetchCartDetails();
     });
   }
 
@@ -43,6 +46,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         debugPrint('Product ID is null');
       });
     }
+  }
+
+  Future<void> fetchCartDetails() async {
+    final prefs = await SharedPreferences.getInstance();
+    final carts = prefs.getStringList('carts') ?? [];
+    setState(() {
+      cartItemCount = carts.length;
+      totalQuantityInCart = carts
+          .map((e) => json.decode(e)['quantity'] as int)
+          .fold(0, (previousValue, element) => previousValue + element);
+    });
   }
 
   void _incrementQuantity() {
@@ -99,6 +113,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
 
     await prefs.setStringList('carts', carts);
+    await fetchCartDetails();
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Producto añadido al carrito.')),
@@ -123,6 +138,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isOutOfStock = product?['stock'] == 0;
+    final isCartFull = cartItemCount >= 7;
+    final isStockInCart = totalQuantityInCart >= (product?['stock'] ?? 0);
+
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
@@ -196,59 +215,58 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                         const SizedBox(height: 20),
                         Center(
-                          child: isAdding
-                              ? Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.remove),
-                                      onPressed: _decrementQuantity,
-                                    ),
-                                    Text(
-                                      '$quantity',
-                                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.add),
-                                      onPressed: _incrementQuantity,
-                                    ),
-                                    const SizedBox(width: 20),
-                                    ElevatedButton(
-                                      onPressed: quantity > 0
-                                          ? _addToCart
-                                          : () {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('La cantidad no puede ser 0')),
-                                              );
-                                            },
+                          child: isOutOfStock || isCartFull || isStockInCart
+                              ? const Text(
+                                  'Producto agotado',
+                                  style: TextStyle(color: Colors.red, fontSize: 18.0),
+                                )
+                              : isAdding
+                                  ? Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.remove),
+                                          onPressed: _decrementQuantity,
+                                        ),
+                                        Text(
+                                          '$quantity',
+                                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.add),
+                                          onPressed: _incrementQuantity,
+                                        ),
+                                        const SizedBox(width: 20),
+                                        ElevatedButton(
+                                          onPressed: quantity > 0 ? _addToCart : null,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: quantity > 0 ? Colors.blue : Colors.grey,
+                                            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                                            textStyle: const TextStyle(color: Colors.white),
+                                          ),
+                                          child: const Text(
+                                            'Añadir',
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: quantity > 0 ? Colors.blue : Colors.grey,
-                                        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                                        backgroundColor: Colors.blue,
+                                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                                         textStyle: const TextStyle(color: Colors.white),
                                       ),
+                                      onPressed: () {
+                                        setState(() {
+                                          isAdding = true;
+                                        });
+                                      },
                                       child: const Text(
-                                        'Añadir',
+                                        '+ Agregar',
                                         style: TextStyle(color: Colors.white),
                                       ),
                                     ),
-                                  ],
-                                )
-                              : ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                                    textStyle: const TextStyle(color: Colors.white),
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      isAdding = true;
-                                    });
-                                  },
-                                  child: const Text(
-                                    '+ Agregar',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
                         ),
                       ],
                     ),

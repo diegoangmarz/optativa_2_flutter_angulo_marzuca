@@ -67,12 +67,34 @@ class CartsScreenState extends State<CartsScreen> {
   }
 
   void addItemToCart(Map<String, dynamic> item) async {
-    final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
     item['dateAdded'] = now.toString();
 
     cartItems.add(item);
     updateCartItems();
+  }
+
+  void finalizePurchase() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now(); 
+    final List<Map<String, dynamic>> finalizedCartItems = cartItems.map((item) => {
+      'name': item['name'],
+      'quantity': item['quantity'],
+      'total': item['total'],
+    }).toList();
+    final Map<String, dynamic> purchaseData = {
+      'items': finalizedCartItems,
+      'total': cartItems.fold(0.0, (sum, item) => sum + item['total']),
+      'quantity': cartItems.fold<int>(0, (sum, item) => sum + (item['quantity'] as int)), 
+      'date': now.toString(), 
+    };
+
+    final String cartData = json.encode(purchaseData);
+    await prefs.setString('finalized_cart', cartData);
+    if (!mounted) return; 
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Compra finalizada y productos guardados')),
+    );
   }
 
   @override
@@ -99,6 +121,12 @@ class CartsScreenState extends State<CartsScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.check),
+            onPressed: finalizePurchase,
+          ),
+        ],
         backgroundColor: Colors.blue,
       ),
       body: isLoading
@@ -119,7 +147,7 @@ class CartsScreenState extends State<CartsScreen> {
                           children: [
                             Row(
                               children: [
-                                Container(
+                                SizedBox(
                                   width: 100,
                                   height: 100,
                                   child: Image.network(

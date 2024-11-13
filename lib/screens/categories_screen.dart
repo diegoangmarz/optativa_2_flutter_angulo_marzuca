@@ -62,10 +62,12 @@ class CategoriesScreenState extends State<CategoriesScreen> {
               Navigator.pushNamed(context, Routes.categories);
             } else if (value == 'Carritos') {
               Navigator.pushNamed(context, Routes.carts);
+            } else if (value == 'Compras realizadas') {
+              Navigator.pushNamed(context, Routes.purchases);
             }
           },
           itemBuilder: (BuildContext context) {
-            return {'Categorías', 'Carritos'}.map((String choice) {
+            return {'Categorías', 'Carritos', 'Compras realizadas'}.map((String choice) {
               return PopupMenuItem<String>(
                 value: choice,
                 child: Text(choice),

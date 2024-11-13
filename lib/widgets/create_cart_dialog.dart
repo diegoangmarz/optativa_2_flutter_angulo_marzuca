@@ -31,7 +31,7 @@ class _CreateCartDialogState extends State<CreateCartDialog> {
       headers: { 'Content-Type': 'application/json' },
       body: json.encode({
         'userId': userId,
-        'products': [], // Inicialmente, el carrito está vacío
+        'products': [], 
       }),
     );
 

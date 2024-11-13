@@ -5,4 +5,5 @@ class Routes {
   static const productDetail = '/productDetail';
   static const carts = '/carts';
   static const cartDetails = '/cartDetails';
+  static const String purchases = '/purchases';
 }

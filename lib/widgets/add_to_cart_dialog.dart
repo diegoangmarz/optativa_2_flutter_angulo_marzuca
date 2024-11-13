@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import '../models/cart_model.dart';  // Asegúrate de que esta importación es correcta y el archivo existe
-
+import '../models/cart_model.dart';  
 class AddToCartDialog extends StatelessWidget {
   final List<Cart> carts;
 
-  const AddToCartDialog({super.key, required this.carts});  // Usar super.key para el constructor
-
+  const AddToCartDialog({super.key, required this.carts});  
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
