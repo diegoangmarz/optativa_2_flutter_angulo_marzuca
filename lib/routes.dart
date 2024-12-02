@@ -7,5 +7,5 @@ class Routes {
   static const cartDetails = '/cartDetails';
   static const String purchases = '/purchases';
   static const String search = '/searchProducts';  
-  static const String ViewedProductsScreen = '/viewedProductsScreen';
+  static const String viewedProductsScreen  = '/viewedProductsScreen';
 }

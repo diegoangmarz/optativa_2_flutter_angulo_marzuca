@@ -67,7 +67,7 @@ class CategoriesScreenState extends State<CategoriesScreen> {
             } else if (value == 'Buscar productos') {
               Navigator.pushNamed(context, Routes.search);
             } else if (value == 'Productos recientes') {
-                  Navigator.pushNamed(context, Routes.ViewedProductsScreen);
+                  Navigator.pushNamed(context, Routes.viewedProductsScreen );
                 }
           },
           itemBuilder: (BuildContext context) {

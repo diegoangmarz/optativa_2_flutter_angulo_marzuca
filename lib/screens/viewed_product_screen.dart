@@ -1,52 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 
-
-class RecentlyViewedScreen extends StatefulWidget {
-  const RecentlyViewedScreen({super.key});
+class ViewedProductsScreen extends StatefulWidget {
+  const ViewedProductsScreen({Key? key}) : super(key: key);
 
   @override
-  _RecentlyViewedScreenState createState() => _RecentlyViewedScreenState();
+  _ViewedProductsScreenState createState() => _ViewedProductsScreenState();
 }
 
-class _RecentlyViewedScreenState extends State<RecentlyViewedScreen> {
-  List<Map<String, dynamic>> recentlyViewedProducts = [];
+class _ViewedProductsScreenState extends State<ViewedProductsScreen> {
+  List<Map<String, String>> visitedProducts = [];
 
   @override
   void initState() {
     super.initState();
-    _loadRecentlyViewedProducts();
+    _loadVisitedProducts();
   }
 
-  Future<void> _loadRecentlyViewedProducts() async {
+  Future<void> _loadVisitedProducts() async {
     final prefs = await SharedPreferences.getInstance();
-    final viewedProducts = prefs.getStringList('viewedProducts') ?? [];
+    List<String>? visitedProductsList = prefs.getStringList('visitedProducts');
 
-    setState(() {
-      recentlyViewedProducts = viewedProducts
-          .map((e) => Map<String, dynamic>.from(json.decode(e)))
-          .toList();
-    });
+    if (visitedProductsList != null && visitedProductsList.isNotEmpty) {
+      List<Map<String, String>> products = [];
+
+      for (var item in visitedProductsList) {
+        final splitItem = item.split('|');
+        if (splitItem.length == 4) { // ID|Name|Price|VisitCount
+          final productId = splitItem[0];
+          final productName = splitItem[1];
+          final productPrice = splitItem[2];
+          final visitCount = splitItem[3];
+
+          products.add({
+            'id': productId,
+            'route': productName,
+            'price': productPrice,
+            'visitCount': visitCount,
+          });
+        }
+      }
+
+      setState(() {
+        visitedProducts = products;
+      });
+    } else {
+      setState(() {
+        visitedProducts = [];
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Productos Vistos'),
+        title: const Text('Viewed Products'),
         backgroundColor: Colors.blue,
       ),
-      body: recentlyViewedProducts.isEmpty
-          ? const Center(child: Text('No se han visto productos'))
+      body: visitedProducts.isEmpty
+          ? const Center(child: Text('No products viewed yet'))
           : ListView.builder(
-              itemCount: recentlyViewedProducts.length,
+              itemCount: visitedProducts.length,
               itemBuilder: (context, index) {
-                final product = recentlyViewedProducts[index];
+                final product = visitedProducts[index];
                 return ListTile(
-                  title: Text(product['name']),
-                  subtitle: Text('Visto ${product['viewedCount']} veces'),
-                  trailing: Text('\$${product['price']}'),
+                  title: Text('Product: ${product['route']}'),
+                  subtitle: Text('Product ID: ${product['id']}'),
+                  trailing: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('Price: \$${product['price']}'),
+                      Text('Visited: ${product['visitCount']} times'),
+                    ],
+                  ),
                 );
               },
             ),

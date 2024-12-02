@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      initialRoute: Routes.login,
+      initialRoute: Routes.categories,// Ruta inicial
       routes: {
         Routes.login: (context) => const LoginScreen(),
         Routes.categories: (context) => const CategoriesScreen(),
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
         Routes.cartDetails: (context) => const CartDetailsScreen(),
         Routes.purchases: (context) => const PurchasesScreen(), 
         Routes.search: (context) => const SearchView(), 
-        Routes.ViewedProductsScreen: (context) => const RecentlyViewedScreen(),
+        Routes.viewedProductsScreen : (context) =>  ViewedProductsScreen(),
 
       },
     );
