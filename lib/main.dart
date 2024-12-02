@@ -6,6 +6,8 @@ import 'screens/login_screen.dart';
 import 'screens/categories_screen.dart';
 import 'screens/cart_details_screen.dart';
 import 'screens/purchases_screen.dart'; 
+import 'screens/search_product.dart';  
+import 'screens/viewed_product_screen.dart';
 import 'routes.dart';
 
 void main() => runApp(const MyApp());
@@ -29,6 +31,9 @@ class MyApp extends StatelessWidget {
         Routes.carts: (context) => const CartsScreen(),
         Routes.cartDetails: (context) => const CartDetailsScreen(),
         Routes.purchases: (context) => const PurchasesScreen(), 
+        Routes.search: (context) => const SearchView(), 
+        Routes.ViewedProductsScreen: (context) => const RecentlyViewedScreen(),
+
       },
     );
   }

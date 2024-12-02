@@ -64,10 +64,14 @@ class CategoriesScreenState extends State<CategoriesScreen> {
               Navigator.pushNamed(context, Routes.carts);
             } else if (value == 'Compras realizadas') {
               Navigator.pushNamed(context, Routes.purchases);
-            }
+            } else if (value == 'Buscar productos') {
+              Navigator.pushNamed(context, Routes.search);
+            } else if (value == 'Productos recientes') {
+                  Navigator.pushNamed(context, Routes.ViewedProductsScreen);
+                }
           },
           itemBuilder: (BuildContext context) {
-            return {'Categorías', 'Carritos', 'Compras realizadas'}.map((String choice) {
+            return {'Categorías', 'Carritos', 'Compras realizadas' , 'Buscar productos',  'Productos recientes'}	.map((String choice) {
               return PopupMenuItem<String>(
                 value: choice,
                 child: Text(choice),

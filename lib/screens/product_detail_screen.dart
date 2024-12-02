@@ -108,7 +108,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         'quantity': quantity,
         'total': (product?['price'] ?? 0) * quantity,
         'date': DateTime.now().toString(),
-        'thumbnail': product?['thumbnail'], 
+        'thumbnail': product?['thumbnail'],
       }));
     }
 
@@ -121,7 +121,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
     setState(() {
       isAdding = false;
-      quantity = 1; 
+      quantity = 1;
     });
   }
 
@@ -162,10 +162,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Navigator.pushNamed(context, Routes.categories);
                 } else if (value == 'Carritos') {
                   Navigator.pushNamed(context, Routes.carts);
+                } else if (value == 'Compras realizadas') {
+                  Navigator.pushNamed(context, Routes.purchases);
+                } else if (value == 'Buscar productos') {
+                  Navigator.pushNamed(context, Routes.search);
                 }
               },
               itemBuilder: (BuildContext context) {
-                return {'Categorías', 'Carritos'}.map((String choice) {
+                return {'Categorías', 'Carritos', 'Compras realizadas', 'Buscar productos'}
+                    .map((String choice) {
                   return PopupMenuItem<String>(
                     value: choice,
                     child: Text(choice),
@@ -179,96 +184,128 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ? const Center(child: CircularProgressIndicator())
             : product == null
                 ? const Center(child: Text('No se encontró información del producto.'))
-                : Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Image.network(
-                            product?['thumbnail'] ?? 'https://via.placeholder.com/150',
-                            height: 200,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(Icons.image, size: 100, color: Colors.grey);
-                            },
+                : SingleChildScrollView(  // Agregado el SingleChildScrollView
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Image.network(
+                              product?['thumbnail'] ?? 'https://via.placeholder.com/150',
+                              height: 200,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.image, size: 100, color: Colors.grey);
+                              },
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          product?['title'] ?? 'Nombre del Producto',
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          product?['description'] ?? 'Descripción del Producto',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Precio: \$${product?['price']}',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Stock: ${product?['stock']}',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(height: 20),
-                        Center(
-                          child: isOutOfStock || isCartFull || isStockInCart
-                              ? const Text(
-                                  'Producto agotado',
-                                  style: TextStyle(color: Colors.red, fontSize: 18.0),
+                          const SizedBox(height: 20),
+                          Text(
+                            product?['title'] ?? 'Nombre del Producto',
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            product?['description'] ?? 'Descripción del Producto',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Precio: \$${product?['price']}',
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Stock: ${product?['stock']}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 20),
+                          Center(
+                            child: isOutOfStock || isCartFull || isStockInCart
+                                ? const Text(
+                                    'Producto agotado',
+                                    style: TextStyle(color: Colors.red, fontSize: 18.0),
+                                  )
+                                : isAdding
+                                    ? Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.remove),
+                                            onPressed: _decrementQuantity,
+                                          ),
+                                          Text(
+                                            '$quantity',
+                                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.add),
+                                            onPressed: _incrementQuantity,
+                                          ),
+                                          const SizedBox(width: 20),
+                                          ElevatedButton(
+                                            onPressed: quantity > 0 ? _addToCart : null,
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: quantity > 0 ? Colors.blue : Colors.grey,
+                                              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                                              textStyle: const TextStyle(color: Colors.white),
+                                            ),
+                                            child: const Text(
+                                              'Añadir',
+                                              style: TextStyle(color: Colors.white),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue,
+                                          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                                          textStyle: const TextStyle(color: Colors.white),
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            isAdding = true;
+                                          });
+                                        },
+                                        child: const Text(
+                                          '+ Agregar',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Divider(),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Reseñas del producto',
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 10),
+                          product?['reviews'] != null && product?['reviews'].isNotEmpty
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: (product?['reviews'] as List)
+                                      .map<Widget>((review) => Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  review['name'] ?? 'Anónimo',
+                                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                                ),
+                                                Text(review['comment'] ?? 'Sin comentarios'),
+                                                const SizedBox(height: 5),
+                                                Text('Calificación: ${review['rating'] ?? 'N/A'}'),
+                                              ],
+                                            ),
+                                          ))
+                                      .toList(),
                                 )
-                              : isAdding
-                                  ? Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.remove),
-                                          onPressed: _decrementQuantity,
-                                        ),
-                                        Text(
-                                          '$quantity',
-                                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.add),
-                                          onPressed: _incrementQuantity,
-                                        ),
-                                        const SizedBox(width: 20),
-                                        ElevatedButton(
-                                          onPressed: quantity > 0 ? _addToCart : null,
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: quantity > 0 ? Colors.blue : Colors.grey,
-                                            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                                            textStyle: const TextStyle(color: Colors.white),
-                                          ),
-                                          child: const Text(
-                                            'Añadir',
-                                            style: TextStyle(color: Colors.white),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
-                                        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                                        textStyle: const TextStyle(color: Colors.white),
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          isAdding = true;
-                                        });
-                                      },
-                                      child: const Text(
-                                        '+ Agregar',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                        ),
-                      ],
+                              : const Text('No hay reseñas disponibles'),
+                        ],
+                      ),
                     ),
                   ),
       ),
