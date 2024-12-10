@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../routes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -23,16 +24,15 @@ class CategoriesScreenState extends State<CategoriesScreen> {
 
   Future<void> fetchCategories() async {
     try {
-      final response = await http.get(Uri.parse('https://dummyjson.com/products/categories'));
+      final response = await http
+          .get(Uri.parse('https://dummyjson.com/products/categories'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print('API Response: $data');  
+        print('API Response: $data');
         if (data is List) {
           setState(() {
-            categories = List<Map<String, dynamic>>.from(data.map((item) => {
-              'name': item['name'],
-              'slug': item['slug']
-            }));
+            categories = List<Map<String, dynamic>>.from(data
+                .map((item) => {'name': item['name'], 'slug': item['slug']}));
             isLoading = false;
           });
         } else {
@@ -49,58 +49,37 @@ class CategoriesScreenState extends State<CategoriesScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Categorías'),
-        backgroundColor: Colors.blue,
-        leading: PopupMenuButton<String>(
-          icon: const Icon(Icons.menu),
-          onSelected: (value) {
-            if (value == 'Categorías') {
-              Navigator.pushNamed(context, Routes.categories);
-            } else if (value == 'Carritos') {
-              Navigator.pushNamed(context, Routes.carts);
-            } else if (value == 'Compras realizadas') {
-              Navigator.pushNamed(context, Routes.purchases);
-            } else if (value == 'Buscar productos') {
-              Navigator.pushNamed(context, Routes.search);
-            } else if (value == 'Productos recientes') {
-                  Navigator.pushNamed(context, Routes.viewedProductsScreen );
-                }
-          },
-          itemBuilder: (BuildContext context) {
-            return {'Categorías', 'Carritos', 'Compras realizadas' , 'Buscar productos',  'Productos recientes'}	.map((String choice) {
-              return PopupMenuItem<String>(
-                value: choice,
-                child: Text(choice),
-              );
-            }).toList();
-          },
-        ),
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage.isNotEmpty
-              ? Center(child: Text(errorMessage))
-              : ListView.builder(
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return ListTile(
-                      leading: const Icon(Icons.category),
-                      title: Text(category['name']),  
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          Routes.products,
-                          arguments: category['slug'],  
-                        );
-                      },
-                    );
-                  },
-                ),
-    );
+// Método para guardar el producto visitado, con su nombre, precio y contador de visitas.
+  Future<void> _saveViewedProduct(Map<String, dynamic> product) async {
+    final prefs = await SharedPreferences.getInstance();
+    final visitedProductsList = prefs.getStringList('visitedProducts') ?? [];
+
+    final productId = product['id'];
+    final productName = product['name'];
+    final productPrice = product['price'];
+
+    bool productFound = false;
+    for (int i = 0; i < visitedProductsList.length; i++) {
+      final item = visitedProductsList[i];
+      final splitItem = item.split('|');
+
+      // Verifica si el producto ya está en la lista
+      if (splitItem[0] == productId) {
+        final visitCount = int.parse(splitItem[3]) + 1;
+        visitedProductsList[i] =
+            '$productId|$productName|$productPrice|$visitCount';
+        productFound = true;
+        break;
+      }
+    }
+
+    // Si el producto no está en la lista, lo agrega con el contador de visitas inicializado en 1
+    if (!productFound) {
+      final newProduct = '$productId|$productName|$productPrice|1';
+      visitedProductsList.add(newProduct);
+    }
+
+    // Guarda la lista actualizada de productos visitados
+    await prefs.setStringList('visitedProducts', visitedProductsList);
   }
 }

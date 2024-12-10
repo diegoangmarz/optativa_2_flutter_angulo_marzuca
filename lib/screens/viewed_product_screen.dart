@@ -26,7 +26,8 @@ class _ViewedProductsScreenState extends State<ViewedProductsScreen> {
 
       for (var item in visitedProductsList) {
         final splitItem = item.split('|');
-        if (splitItem.length == 4) { // ID|Name|Price|VisitCount
+        if (splitItem.length == 4) {
+          // ID|Name|Price|VisitCount
           final productId = splitItem[0];
           final productName = splitItem[1];
           final productPrice = splitItem[2];
@@ -34,7 +35,7 @@ class _ViewedProductsScreenState extends State<ViewedProductsScreen> {
 
           products.add({
             'id': productId,
-            'route': productName,
+            'name': productName,
             'price': productPrice,
             'visitCount': visitCount,
           });
@@ -55,23 +56,23 @@ class _ViewedProductsScreenState extends State<ViewedProductsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Viewed Products'),
+        title: const Text('Productos Vistos'),
         backgroundColor: Colors.blue,
       ),
       body: visitedProducts.isEmpty
-          ? const Center(child: Text('No products viewed yet'))
+          ? const Center(child: Text('Aún no has visto productos'))
           : ListView.builder(
               itemCount: visitedProducts.length,
               itemBuilder: (context, index) {
                 final product = visitedProducts[index];
                 return ListTile(
-                  title: Text('Product: ${product['route']}'),
-                  subtitle: Text('Product ID: ${product['id']}'),
+                  title: Text('Producto: ${product['name']}'),
+                  subtitle: Text('ID del producto: ${product['id']}'),
                   trailing: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('Price: \$${product['price']}'),
-                      Text('Visited: ${product['visitCount']} times'),
+                      Text('Precio: \$${product['price']}'),
+                      Text('Visto: ${product['visitCount']} veces'),
                     ],
                   ),
                 );
