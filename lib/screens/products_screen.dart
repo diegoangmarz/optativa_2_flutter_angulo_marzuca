@@ -1,149 +1,93 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../routes.dart';
+// lib/screens/product_screen.dart
 
-class ProductsScreen extends StatefulWidget {
-  const ProductsScreen({super.key});
+
+import 'package:flutter/material.dart';
+
+import '../infrastructure/connection/api_service.dart';
+import '../modules/login/domain/dto/product_dto.dart';
+import '../modules/login/domain/repository/product_repository.dart';
+import '../modules/login/useCase/fetch_products_by_category_usecase.dart';
+
+class ProductScreen extends StatefulWidget {
+  final String category;
+
+  const ProductScreen({super.key, required this.category});
 
   @override
-  _ProductsScreenState createState() => _ProductsScreenState();
+  _ProductScreenState createState() => _ProductScreenState();
 }
 
-class _ProductsScreenState extends State<ProductsScreen> {
-  List<Map<String, dynamic>> products = [];
-  bool isLoading = true;
-  String category = '';
+class _ProductScreenState extends State<ProductScreen> {
+  late FetchProductsByCategoryUseCase fetchProductsByCategoryUseCase;
+  late Future<List<ProductDTO>> products;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final categoryArg = ModalRoute.of(context)?.settings.arguments as String?;
-    if (categoryArg != null && categoryArg != category) {
-      category = categoryArg;
-      fetchProducts(category);
-    }
-  }
+  void initState() {
+    super.initState();
 
-  Future<void> fetchProducts(String category) async {
-    setState(() {
-      isLoading = true;
-    });
-    try {
-      final response = await http.get(Uri.parse('https://dummyjson.com/products/category/$category'));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['products'] is List) {
-          setState(() {
-            products = List<Map<String, dynamic>>.from(data['products']);
-            isLoading = false;
-          });
-        } else {
-          throw Exception('Unexpected data format');
-        }
-      } else {
-        throw Exception('Failed to load products');
-      }
-    } catch (error) {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
+    final apiService = ApiService();
+    final productRepository = ProductRepositoryImpl(apiService: apiService);
+    fetchProductsByCategoryUseCase = FetchProductsByCategoryUseCase(repository: productRepository);
 
-  Future<void> _incrementVisitCount(String productId, String productRoute, String productPrice) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String>? visitedProducts = prefs.getStringList('visitedProducts') ?? [];
-
-    // Crear un nuevo producto como una combinación del ID, ruta y precio
-    String productData = '$productId|$productRoute|$productPrice';
-
-    // Verificar si el producto ya ha sido visitado
-    if (!visitedProducts.contains(productData)) {
-      visitedProducts.add(productData); // Si no ha sido visitado, lo agregamos
-    }
-
-    // Guardar la lista actualizada en SharedPreferences
-    await prefs.setStringList('visitedProducts', visitedProducts);
+    // Cargar los productos al iniciar la pantalla
+    products = fetchProductsByCategoryUseCase.execute(widget.category);
   }
 
   @override
   Widget build(BuildContext context) {
-    final displayCategory = category;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(displayCategory),
-        backgroundColor: Colors.blue,
+        title: Text('Productos de ${widget.category}'),
       ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: products.length,
+      body: FutureBuilder<List<ProductDTO>>(
+        future: products,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No hay productos'));
+          } else {
+            return GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.8,
+              ),
+              itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                final product = products[index];
-                return GestureDetector(
-                  onTap: () {
-                    // Incrementar el contador al ver un producto
-                    _incrementVisitCount(product['id'].toString(), product['title'], product['price'].toString());
-
-                    Navigator.pushNamed(
-                      context,
-                      Routes.productDetail,
-                      arguments: product['id'].toString(),
-                    );
-                  },
-                  child: Card(
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 1,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                product['thumbnail'] ?? '',
-                                fit: BoxFit.cover,
-                                height: 100,
-                                width: 100,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(child: Icon(Icons.image, color: Colors.grey, size: 50));
-                                },
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 16.0),
-                          Expanded(
-                            flex: 2,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product['title'] ?? 'Producto desconocido',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                                SizedBox(height: 8.0),
-                                Text(
-                                  '\$${product['price']}',
-                                  style: TextStyle(fontSize: 16, color: Colors.green),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                final product = snapshot.data![index];
+                return Card(
+                  child: Column(
+                    children: [
+                      Image.network(
+                        product.thumbnail,
+                        height: 80,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
                       ),
-                    ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          product.title,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Navegar a detalles si tienes esa pantalla
+                        },
+                        child: const Text('Detalles'),
+                      ),
+                    ],
                   ),
                 );
               },
-            ),
+            );
+          }
+        },
+      ),
     );
   }
 }

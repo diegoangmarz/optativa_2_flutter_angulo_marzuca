@@ -1,313 +1,280 @@
+
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
-import '../routes.dart';
+import 'dart:convert';
+import 'cart_screen.dart';
+
+import '../modules/login/domain/repository/cart_repository.dart';
+import '../modules/login/domain/repository/product_detail_repository.dart';
+import '../modules/login/useCase/get_cart_items_usecase.dart';
+import '../modules/login/useCase/remove_from_cart_usecase.dart';
+import '../infrastructure/connection/api_service.dart';
+import '../modules/login/domain/dto/product_detail_dto.dart';
+import '../modules/login/useCase/fetch_product_detail_usecase.dart';
 
 class ProductDetailScreen extends StatefulWidget {
-  const ProductDetailScreen({super.key});
+  final int productId;
+
+  const ProductDetailScreen({super.key, required this.productId});
 
   @override
   _ProductDetailScreenState createState() => _ProductDetailScreenState();
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  Map<String, dynamic>? product;
-  bool isLoading = true;
-  bool isAdding = false;
-  int quantity = 1;
-  int cartItemCount = 0;
-  int totalQuantityInCart = 0;
+  late FetchProductDetailUseCase fetchProductDetailUseCase;
+  late GetCartItemsUseCase getCartItemsUseCase; // Asegúrate de definir esta variable
+  late Future<ProductDetailDTO> productDetail;
+  final TextEditingController _quantityController = TextEditingController();
+  late List<dynamic> cartItems;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      fetchProductDetails();
-      fetchCartDetails();
-    });
+    final apiService = ApiService();
+    final productDetailRepository = ProductDetailRepositoryImpl(apiService: apiService);
+    fetchProductDetailUseCase = FetchProductDetailUseCase(repository: productDetailRepository);
+    productDetail = fetchProductDetailUseCase.execute(widget.productId);
+    _loadCartItems();
   }
 
-  Future<void> fetchProductDetails() async {
-    final productId = ModalRoute.of(context)?.settings.arguments as String?;
-    if (productId != null) {
-      final response = await http.get(Uri.parse('https://dummyjson.com/products/$productId'));
-      if (response.statusCode == 200) {
-        setState(() {
-          product = json.decode(response.body);
-          isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load product details');
-      }
+  Future<void> _loadCartItems() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cartData = prefs.getString('cart') ?? '[]';
+    cartItems = jsonDecode(cartData);
+  }
+
+  Future<void> _addToViewedProducts(ProductDetailDTO product) async {
+    final prefs = await SharedPreferences.getInstance();
+    final viewedData = prefs.getString('viewed_products') ?? '[]';
+    final List<dynamic> viewedProducts = jsonDecode(viewedData);
+
+    final existingProductIndex = viewedProducts.indexWhere((item) => item['productId'] == product.id);
+    if (existingProductIndex != -1) {
+      viewedProducts[existingProductIndex]['viewCount'] += 1;
     } else {
-      setState(() {
-        isLoading = false;
-        debugPrint('Product ID is null');
+      viewedProducts.add({
+        'productId': product.id,
+        'name': product.title,
+        'price': product.price,
+        'viewCount': 1,
       });
     }
+
+    await prefs.setString('viewed_products', jsonEncode(viewedProducts));
   }
 
-  Future<void> fetchCartDetails() async {
-    final prefs = await SharedPreferences.getInstance();
-    final carts = prefs.getStringList('carts') ?? [];
-    setState(() {
-      cartItemCount = carts.length;
-      totalQuantityInCart = carts
-          .map((e) => json.decode(e)['quantity'] as int)
-          .fold(0, (previousValue, element) => previousValue + element);
-    });
+  bool _shouldHideAddToCartButton(ProductDetailDTO product) {
+    final cartItem = cartItems.firstWhere(
+      (item) => item['productId'] == product.id,
+      orElse: () => null,
+    );
+
+    final productStock = product.stock;
+    final productQuantityInCart = cartItem != null ? cartItem['quantity'] as int : 0;
+
+    return productStock <= 0 || productQuantityInCart >= productStock;
   }
 
-  void _incrementQuantity() {
-    setState(() {
-      if (quantity < (product?['stock'] ?? 0)) {
-        quantity++;
-      }
-    });
-  }
+  Future<void> _addToCart(ProductDetailDTO product) async {
+    final quantity = int.tryParse(_quantityController.text) ?? 0;
 
-  void _decrementQuantity() {
-    setState(() {
-      if (quantity > 0) {
-        quantity--;
-      }
-    });
-  }
-
-  void _addToCart() async {
-    if (quantity <= 0 || quantity > (product?['stock'] ?? 0)) {
+    if (quantity <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('La cantidad no es válida')),
+        const SnackBar(content: Text('Cantidad debe ser mayor a cero')),
+      );
+      return;
+    }
+
+    if (quantity > product.stock) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay suficiente stock')),
       );
       return;
     }
 
     final prefs = await SharedPreferences.getInstance();
-    final carts = prefs.getStringList('carts') ?? [];
-    final productId = product?['id'].toString() ?? '';
+    final cartData = prefs.getString('cart') ?? '[]';
+    final List<dynamic> cart = jsonDecode(cartData);
 
-    final existingCartIndex = carts.indexWhere((element) => json.decode(element)['id'] == productId);
-    if (existingCartIndex != -1) {
-      final existingCart = json.decode(carts[existingCartIndex]);
-      existingCart['quantity'] += quantity;
-      existingCart['total'] = existingCart['price'] * existingCart['quantity'];
-      carts[existingCartIndex] = json.encode(existingCart);
+    final existingProductIndex = cart.indexWhere((item) => item['productId'] == product.id);
+    if (existingProductIndex != -1) {
+      cart[existingProductIndex]['quantity'] += quantity;
+
+      if (cart[existingProductIndex]['quantity'] > product.stock) {
+        cart[existingProductIndex]['quantity'] = product.stock;
+      }
+
+      cart[existingProductIndex]['total'] = cart[existingProductIndex]['quantity'] * product.price;
     } else {
-      if (carts.length >= 7) {
+      if (cart.length >= 7) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No puede agregar más de 7 productos diferentes al carrito')),
+          const SnackBar(content: Text('No puedes agregar más de 7 productos diferentes')),
         );
         return;
       }
-
-      carts.add(json.encode({
-        'id': productId,
-        'name': product?['title'],
-        'price': product?['price'],
+      cart.add({
+        'productId': product.id,
+        'name': product.title,
         'quantity': quantity,
-        'total': (product?['price'] ?? 0) * quantity,
-        'date': DateTime.now().toString(),
-        'thumbnail': product?['thumbnail'],
-      }));
+        'price': product.price,
+        'total': quantity * product.price,
+      });
     }
 
-    await prefs.setStringList('carts', carts);
-    await fetchCartDetails();
-
+    await prefs.setString('cart', jsonEncode(cart));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Producto añadido al carrito.')),
+      const SnackBar(content: Text('Producto añadido al carrito')),
     );
 
-    setState(() {
-      isAdding = false;
-      quantity = 1;
-    });
-  }
-
-  Future<bool> _onWillPop() async {
-    if (isAdding) {
-      setState(() {
-        isAdding = false;
-      });
-      return Future.value(false);
-    } else {
-      return Future.value(true);
-    }
+    _loadCartItems();
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    final isOutOfStock = product?['stock'] == 0;
-    final isCartFull = cartItemCount >= 7;
-    final isStockInCart = totalQuantityInCart >= (product?['stock'] ?? 0);
-
-    return WillPopScope(
-      onWillPop: _onWillPop,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Detalle del Producto'),
-          backgroundColor: Colors.blue,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detalles del Producto'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart),
             onPressed: () {
-              Navigator.pop(context);
+              final cartRepository = CartRepository();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CartScreen(
+                    getCartItemsUseCase: GetCartItemsUseCase(cartRepository),
+                    removeFromCartUseCase: RemoveFromCartUseCase(cartRepository),
+                    cartRepository: cartRepository,
+                  ),
+                ),
+              );
             },
           ),
-          actions: [
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.menu),
-              onSelected: (value) {
-                if (value == 'Categorías') {
-                  Navigator.pushNamed(context, Routes.categories);
-                } else if (value == 'Carritos') {
-                  Navigator.pushNamed(context, Routes.carts);
-                } else if (value == 'Compras realizadas') {
-                  Navigator.pushNamed(context, Routes.purchases);
-                } else if (value == 'Buscar productos') {
-                  Navigator.pushNamed(context, Routes.search);
-                }
-              },
-              itemBuilder: (BuildContext context) {
-                return {'Categorías', 'Carritos', 'Compras realizadas', 'Buscar productos'}
-                    .map((String choice) {
-                  return PopupMenuItem<String>(
-                    value: choice,
-                    child: Text(choice),
-                  );
-                }).toList();
-              },
-            ),
-          ],
-        ),
-        body: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : product == null
-                ? const Center(child: Text('No se encontró información del producto.'))
-                : SingleChildScrollView(  // Agregado el SingleChildScrollView
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Center(
-                            child: Image.network(
-                              product?['thumbnail'] ?? 'https://via.placeholder.com/150',
-                              height: 200,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(Icons.image, size: 100, color: Colors.grey);
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            product?['title'] ?? 'Nombre del Producto',
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            product?['description'] ?? 'Descripción del Producto',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'Precio: \$${product?['price']}',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Stock: ${product?['stock']}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(height: 20),
-                          Center(
-                            child: isOutOfStock || isCartFull || isStockInCart
-                                ? const Text(
-                                    'Producto agotado',
-                                    style: TextStyle(color: Colors.red, fontSize: 18.0),
-                                  )
-                                : isAdding
-                                    ? Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          IconButton(
-                                            icon: const Icon(Icons.remove),
-                                            onPressed: _decrementQuantity,
-                                          ),
-                                          Text(
-                                            '$quantity',
-                                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.add),
-                                            onPressed: _incrementQuantity,
-                                          ),
-                                          const SizedBox(width: 20),
-                                          ElevatedButton(
-                                            onPressed: quantity > 0 ? _addToCart : null,
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: quantity > 0 ? Colors.blue : Colors.grey,
-                                              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                                              textStyle: const TextStyle(color: Colors.white),
-                                            ),
-                                            child: const Text(
-                                              'Añadir',
-                                              style: TextStyle(color: Colors.white),
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blue,
-                                          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                                          textStyle: const TextStyle(color: Colors.white),
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            isAdding = true;
-                                          });
-                                        },
-                                        child: const Text(
-                                          '+ Agregar',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                      ),
-                          ),
-                          const SizedBox(height: 20),
-                          const Divider(),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Reseñas del producto',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 10),
-                          product?['reviews'] != null && product?['reviews'].isNotEmpty
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: (product?['reviews'] as List)
-                                      .map<Widget>((review) => Padding(
-                                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  review['name'] ?? 'Anónimo',
-                                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                                ),
-                                                Text(review['comment'] ?? 'Sin comentarios'),
-                                                const SizedBox(height: 5),
-                                                Text('Calificación: ${review['rating'] ?? 'N/A'}'),
-                                              ],
-                                            ),
-                                          ))
-                                      .toList(),
-                                )
-                              : const Text('No hay reseñas disponibles'),
-                        ],
-                      ),
+        ],
+      ),
+      body: FutureBuilder<ProductDetailDTO>(
+        future: productDetail,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData) {
+            return const Center(child: Text('Detalles del producto no encontrados'));
+          } else {
+            final product = snapshot.data!;
+            _addToViewedProducts(product);  // Agregar el producto a productos vistos
+            final shouldHideButton = _shouldHideAddToCartButton(product);
+
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Image.network(
+                    product.images.isNotEmpty ? product.images[0] : 'default_image_url',
+                    height: 250,
+                    fit: BoxFit.cover,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      product.title,
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Text(
+                      product.description,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      '\$${product.price}',
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
+                    ),
+                  ),
+                  if (shouldHideButton)
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Producto agotado',
+                        style: TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  else ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: TextField(
+                        controller: _quantityController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Cantidad',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: ElevatedButton(
+                        onPressed: () => _addToCart(product),
+                        child: const Text('Agregar al carrito'),
+                      ),
+                    ),
+                  ],
+                  // Reseñas
+                  Padding(
+  padding: const EdgeInsets.all(16.0),
+  child: Text(
+    'Reseñas:',
+    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+  ),
+),
+// Si no hay reseñas
+if (product.reviews.isEmpty)
+  const Padding(
+    padding: EdgeInsets.symmetric(horizontal: 16.0),
+    child: Text('No hay reseñas para este producto.'),
+  )
+// Mostrar las reseñas
+else
+  ...product.reviews.map((review) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${review['comment']}',
+            style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '- ${review['reviewerName']} (${review['rating']} estrellas)',
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Fecha: ${review['date']}',
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }).toList(),
+
+                ],
+              ),
+            );
+          }
+        },
       ),
     );
   }
