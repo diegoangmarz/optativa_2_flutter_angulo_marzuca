@@ -13,7 +13,6 @@ static Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(builder: (_) => LoginScreen());
     case home:
       return MaterialPageRoute(builder: (_) => const HomeScreen());
-    // Otros casos
     default:
       return MaterialPageRoute(
         builder: (_) => const Scaffold(

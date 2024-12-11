@@ -53,13 +53,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],  // La pantalla se cambiará en base al índice
+      body: _screens[_selectedIndex],  
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        backgroundColor: Colors.blue,  // Cambia el fondo del BottomNavigationBar
-        selectedItemColor: Colors.white,  // Cambia el color del ítem seleccionado
-        unselectedItemColor: Colors.grey,  // Cambia el color de los ítems no seleccionados
+        backgroundColor: Colors.blue,  
+        selectedItemColor: Colors.white,  
+        unselectedItemColor: Colors.grey, 
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.search),

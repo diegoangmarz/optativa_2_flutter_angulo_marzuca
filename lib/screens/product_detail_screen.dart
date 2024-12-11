@@ -24,7 +24,7 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   late FetchProductDetailUseCase fetchProductDetailUseCase;
-  late GetCartItemsUseCase getCartItemsUseCase; // Asegúrate de definir esta variable
+  late GetCartItemsUseCase getCartItemsUseCase; 
   late Future<ProductDetailDTO> productDetail;
   final TextEditingController _quantityController = TextEditingController();
   late List<dynamic> cartItems;

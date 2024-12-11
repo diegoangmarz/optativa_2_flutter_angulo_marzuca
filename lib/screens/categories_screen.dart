@@ -1,4 +1,3 @@
-// lib/screens/categories_screen.dart
 
 import '../infrastructure/connection/api_service.dart';
 import '../modules/login/useCase/fetch_categories_usecase.dart';
@@ -59,7 +58,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   title: Text(category.name),
                   subtitle: Text(category.slug),
                   onTap: () {
-                    // Aquí puedes agregar la navegación a la pantalla de productos por categoría
                   },
                 );
               },

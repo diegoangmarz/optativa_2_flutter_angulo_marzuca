@@ -27,13 +27,7 @@ class _ViewedProductsScreenState extends State<ViewedProductsScreen> {
 
   // Navegar al detalle del producto
   void _navigateToProductDetail(int productId) {
-    // Aquí puedes agregar la navegación al detalle del producto
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => ProductDetailScreen(productId: productId),
-    //   ),
-    // );
+
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('Navegando a los detalles del producto $productId'),
     ));

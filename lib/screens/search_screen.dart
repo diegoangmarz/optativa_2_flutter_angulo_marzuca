@@ -1,5 +1,5 @@
 
-import 'package:flutter/material.dart'; // Asegúrate de importar la pantalla de detalles
+import 'package:flutter/material.dart'; 
 
 import '../infrastructure/connection/api_service.dart';
 import '../modules/login/domain/dto/product_dto.dart';
@@ -71,7 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => ProductDetailScreen(
-                                productId: product.id,  // Usamos product.id directamente como String
+                                productId: product.id,  
                               ),
                             ),
                           );
