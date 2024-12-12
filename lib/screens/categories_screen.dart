@@ -1,4 +1,3 @@
-
 import '../infrastructure/connection/api_service.dart';
 import '../modules/login/useCase/fetch_categories_usecase.dart';
 import '../modules/login/domain/repository/category_repository.dart';
@@ -22,7 +21,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     final apiService = ApiService();
     final categoryRepository = CategoryRepository(apiService: apiService);
     fetchCategoriesUseCase = FetchCategoriesUseCase(repository: categoryRepository);
-
 
     _loadCategories();
   }
@@ -58,6 +56,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   title: Text(category.name),
                   subtitle: Text(category.slug),
                   onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/products',
+                      arguments: category.slug, // Pasar solo el slug como String
+                    );
                   },
                 );
               },

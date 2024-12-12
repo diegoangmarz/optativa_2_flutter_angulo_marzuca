@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 
 import '../infrastructure/connection/api_service.dart';
@@ -7,16 +5,16 @@ import '../modules/login/domain/dto/product_dto.dart';
 import '../modules/login/domain/repository/product_repository.dart';
 import '../modules/login/useCase/fetch_products_by_category_usecase.dart';
 
-class ProductScreen extends StatefulWidget {
+class ProductsScreen extends StatefulWidget {
   final String category;
 
-  const ProductScreen({super.key, required this.category});
+  const ProductsScreen({super.key, required this.category});
 
   @override
-  _ProductScreenState createState() => _ProductScreenState();
+  _ProductsScreenState createState() => _ProductsScreenState();
 }
 
-class _ProductScreenState extends State<ProductScreen> {
+class _ProductsScreenState extends State<ProductsScreen> {
   late FetchProductsByCategoryUseCase fetchProductsByCategoryUseCase;
   late Future<List<ProductDTO>> products;
 
@@ -75,7 +73,11 @@ class _ProductScreenState extends State<ProductScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // Navegar a detalles si tienes esa pantalla
+                          Navigator.pushNamed(
+                            context,
+                            '/productDetail',
+                            arguments: product.id, // Pasar el ID del producto
+                          );
                         },
                         child: const Text('Detalles'),
                       ),
