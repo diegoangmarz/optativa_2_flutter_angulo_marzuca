@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:optativa_2_flutter_angulo_marzuca/screens/categories_screen.dart';
 
 import '../modules/login/domain/repository/cart_repository.dart';
 import '../modules/login/useCase/get_cart_items_usecase.dart';
@@ -33,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
     getCartItemsUseCase = GetCartItemsUseCase(cartRepository);  // Inicialización del caso de uso
     removeFromCartUseCase = RemoveFromCartUseCase(cartRepository);
     _screens = [
+      CategoriesScreen(),
       SearchScreen(),
       CartScreen(
         getCartItemsUseCase: getCartItemsUseCase,
@@ -61,6 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: Colors.white,  
         unselectedItemColor: Colors.grey, 
         items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Categories',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: 'Buscar',
